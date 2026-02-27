@@ -24,7 +24,10 @@ dist-ssr
 *.sw?
 
 # Claude Code local settings
-.claude/
+.claude/*
+!.claude/skills/
+!.claude/settings.json
+.claude/settings.local.json
 
 # Root-level icon source (kept in docs/_sourceFiles/)
 /app-icon.png
