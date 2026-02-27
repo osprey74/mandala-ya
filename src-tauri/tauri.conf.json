@@ -18,7 +18,11 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
     }
   },
   "bundle": {
@@ -30,6 +34,15 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["mandala"],
+        "name": "Mandala-ya.Chart",
+        "description": "Mandala-ya Chart File",
+        "mimeType": "application/x-mandala",
+        "role": "Editor"
+      }
     ]
   }
 }

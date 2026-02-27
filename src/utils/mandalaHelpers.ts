@@ -91,7 +91,7 @@ export function syncCenterText(unit: MandalaUnit): MandalaUnit {
   const newCells = unit.cells.map((cell) => {
     if (cell.children) {
       const childCells = cell.children.cells.map((cc, i) =>
-        i === CENTER ? { ...cc, text: cell.text } : cc,
+        i === CENTER ? { ...cc, text: cell.text, image: cell.image } : cc,
       );
       const syncedChild = syncCenterText({ ...cell.children, cells: childCells });
       return { ...cell, children: syncedChild };
@@ -192,4 +192,92 @@ export function findChildUnitId(unit: MandalaUnit, cellId: string): string | nul
     }
   }
   return null;
+}
+
+// ----------------------------------------------------------------
+// エクスポート用変換
+// ----------------------------------------------------------------
+
+/**
+ * Markdown 形式に変換（H1=主題, H2=ブランチ, H3=サブブランチ）
+ * @param imagesDirName 画像ディレクトリ名（例: "目標設定2026_images"）。指定時は画像参照を出力
+ */
+export function chartToMarkdown(chart: MandalaChart, imagesDirName?: string): string {
+  const root = chart.rootUnit;
+  const rootTheme = root.cells[CENTER].text || chart.title;
+  const lines: string[] = [`# ${rootTheme}`, ""];
+
+  for (const cell of root.cells) {
+    if (cell.position === CENTER) continue;
+    if (!cell.text.trim() && !cell.image) continue;
+
+    if (cell.text.trim()) {
+      lines.push(`## ${cell.text}`);
+    }
+    if (cell.image && imagesDirName) {
+      lines.push(`![${cell.text.trim() || "image"}](${imagesDirName}/${cell.image})`);
+    }
+    lines.push("");
+
+    if (cell.children) {
+      for (const child of cell.children.cells) {
+        if (child.position === CENTER) continue;
+        if (!child.text.trim() && !child.image) continue;
+
+        if (child.text.trim()) {
+          lines.push(`### ${child.text}`);
+        }
+        if (child.image && imagesDirName) {
+          lines.push(`![${child.text.trim() || "image"}](${imagesDirName}/${child.image})`);
+        }
+      }
+      lines.push("");
+    }
+  }
+  return lines.join("\n").trimEnd();
+}
+
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** OPML 形式に変換 */
+export function chartToOpml(chart: MandalaChart): string {
+  const root = chart.rootUnit;
+  const rootTheme = root.cells[CENTER].text || chart.title;
+  const ind = (n: number) => "  ".repeat(n);
+  const lines: string[] = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<opml version="2.0">',
+    `${ind(1)}<head><title>${escapeXml(rootTheme)}</title></head>`,
+    `${ind(1)}<body>`,
+    `${ind(2)}<outline text="${escapeXml(rootTheme)}">`,
+  ];
+
+  for (const cell of root.cells) {
+    if (cell.position === CENTER) continue;
+    if (!cell.text.trim()) continue;
+    const subItems =
+      cell.children?.cells.filter(
+        (c) => c.position !== CENTER && c.text.trim(),
+      ) ?? [];
+    if (subItems.length > 0) {
+      lines.push(`${ind(3)}<outline text="${escapeXml(cell.text)}">`);
+      for (const child of subItems) {
+        lines.push(`${ind(4)}<outline text="${escapeXml(child.text)}"/>`);
+      }
+      lines.push(`${ind(3)}</outline>`);
+    } else {
+      lines.push(`${ind(3)}<outline text="${escapeXml(cell.text)}"/>`);
+    }
+  }
+
+  lines.push(`${ind(2)}</outline>`);
+  lines.push(`${ind(1)}</body>`);
+  lines.push("</opml>");
+  return lines.join("\n");
 }

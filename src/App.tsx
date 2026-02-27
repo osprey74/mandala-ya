@@ -1,6 +1,6 @@
-import { useEffect, useCallback, useState, useMemo } from "react";
+import { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import "./App.css";
-import type { MandalaCell } from "./types/mandala";
+import type { MandalaCell, MandalaChart } from "./types/mandala";
 import {
   useMandalaStore,
   useCurrentUnit,
@@ -9,13 +9,36 @@ import {
   useCurrentUnitId,
   buildBreadcrumbs,
 } from "./store/useMandalaStore";
+import { useSaveStore } from "./store/useSaveStore";
+import {
+  loadSavedPath,
+  persistSavePath,
+  saveChart,
+  loadChart,
+  openChartFile,
+  exportChartJson,
+  exportChartMarkdown,
+  exportChartOpml,
+  chooseSavePath,
+  addImageToCell,
+} from "./utils/fileOperations";
 import { PALETTES, CENTER, KEY_TO_POSITION } from "./constants/palettes";
+import { createChart } from "./utils/mandalaHelpers";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Breadcrumbs from "./components/Breadcrumbs";
 import FocusView from "./components/FocusView";
 import OverviewView from "./components/OverviewView";
 import ModalEditor from "./components/ModalEditor";
+
+/** チャートの作成日から保存ダイアログのデフォルトファイル名を生成する */
+function chartDefaultFilename(chart: MandalaChart): string {
+  const date = new Date(chart.createdAt);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `mandala-ya_${y}${m}${d}.mandala`;
+}
 
 export default function App() {
   // ── State slices (stable references — only primitives or same-ref objects) ──
@@ -35,6 +58,10 @@ export default function App() {
   const setFocusedPosition = useMandalaStore((s) => s.setFocusedPosition);
   const swapCells = useMandalaStore((s) => s.swapCells);
   const resetNavIfNeeded = useMandalaStore((s) => s.resetNavIfNeeded);
+  const initFromFile = useMandalaStore((s) => s.initFromFile);
+
+  // ── Save store ──
+  const { savePath, isDirty, isSaving, setSavePath, setDirty, setIsSaving, bumpSaved, bumpExported } = useSaveStore();
 
   // ── Derived state ──
   const currentUnit = useCurrentUnit();
@@ -52,12 +79,261 @@ export default function App() {
   // ── Modal editor state ──
   const [modalCell, setModalCell] = useState<MandalaCell | null>(null);
 
+  // ── Dirty tracking: last-saved chart ref ──
+  const savedChartRef = useRef(chart);
+
+  // ── Startup: load from plugin-store ──
+  useEffect(() => {
+    (async () => {
+      const storedPath = await loadSavedPath();
+      if (!storedPath) return;
+      try {
+        const loaded = await loadChart(storedPath);
+        initFromFile(loaded);
+        useMandalaStore.temporal.getState().clear();
+        savedChartRef.current = loaded;
+        setSavePath(storedPath);
+        setDirty(false);
+      } catch (e) {
+        console.warn("前回のファイルの読み込みに失敗しました:", e);
+        await persistSavePath(null);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Reset nav if current unit was removed by undo
   useEffect(() => {
     resetNavIfNeeded();
   }, [chart, resetNavIfNeeded]);
 
-  // グローバルキーハンドラー（全ビューで有効）
+  // ── Dirty tracking ──
+  useEffect(() => {
+    if (chart !== savedChartRef.current) {
+      setDirty(true);
+    }
+  }, [chart, setDirty]);
+
+  // ── Auto-save (debounce 500ms) ──
+  useEffect(() => {
+    if (!savePath || !isDirty) return;
+    setIsSaving(true);
+    const timer = setTimeout(async () => {
+      try {
+        await saveChart(chart, savePath);
+        savedChartRef.current = chart;
+        setDirty(false);
+        bumpSaved();
+      } catch (e) {
+        console.error("自動保存に失敗しました:", e);
+      } finally {
+        setIsSaving(false);
+      }
+    }, 500);
+    return () => {
+      clearTimeout(timer);
+      setIsSaving(false);
+    };
+  }, [chart, savePath, isDirty, setDirty, setIsSaving]);
+
+  // ── File operations ──
+
+  const handleSave = useCallback(async () => {
+    let path = savePath;
+    if (!path) {
+      path = await chooseSavePath(chartDefaultFilename(chart));
+      if (!path) return;
+      setSavePath(path);
+      await persistSavePath(path);
+    }
+    setIsSaving(true);
+    try {
+      await saveChart(chart, path);
+      savedChartRef.current = chart;
+      setDirty(false);
+      bumpSaved();
+    } catch (e) {
+      console.error("保存に失敗しました:", e);
+      alert("保存に失敗しました:\n" + e);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [savePath, chart, setSavePath, setDirty, setIsSaving, bumpSaved]);
+
+  const handleSaveAs = useCallback(async () => {
+    const defaultName = savePath
+      ? savePath.replace(/\\/g, "/").split("/").pop()
+      : chartDefaultFilename(chart);
+    const path = await chooseSavePath(defaultName);
+    if (!path) return;
+    setSavePath(path);
+    await persistSavePath(path);
+    setIsSaving(true);
+    try {
+      await saveChart(chart, path);
+      savedChartRef.current = chart;
+      setDirty(false);
+      bumpSaved();
+    } catch (e) {
+      console.error("保存に失敗しました:", e);
+      alert("保存に失敗しました:\n" + e);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [savePath, chart, setSavePath, setDirty, setIsSaving, bumpSaved]);
+
+  const handleOpen = useCallback(async () => {
+    if (isDirty) {
+      const ok = window.confirm("未保存の変更があります。別のファイルを開きますか？");
+      if (!ok) return;
+    }
+    try {
+      const result = await openChartFile();
+      if (!result) return;
+      initFromFile(result.chart);
+      useMandalaStore.temporal.getState().clear();
+      savedChartRef.current = result.chart;
+      setSavePath(result.path);
+      await persistSavePath(result.path);
+      setDirty(false);
+    } catch (e) {
+      console.error("ファイルを開くのに失敗しました:", e);
+      alert("ファイルを開くのに失敗しました:\n" + e);
+    }
+  }, [isDirty, initFromFile, setSavePath, setDirty]);
+
+  const handleExport = useCallback(async () => {
+    try {
+      await exportChartJson(chart);
+      bumpExported();
+    } catch (e) {
+      console.error("エクスポートに失敗しました:", e);
+      alert("エクスポートに失敗しました:\n" + e);
+    }
+  }, [chart, bumpExported]);
+
+  const handleExportMarkdown = useCallback(async () => {
+    try {
+      await exportChartMarkdown(chart, savePath);
+      bumpExported();
+    } catch (e) {
+      console.error("Markdownエクスポートに失敗しました:", e);
+      alert("Markdownエクスポートに失敗しました:\n" + e);
+    }
+  }, [chart, savePath, bumpExported]);
+
+  const handleExportOpml = useCallback(async () => {
+    try {
+      await exportChartOpml(chart);
+      bumpExported();
+    } catch (e) {
+      console.error("OPMLエクスポートに失敗しました:", e);
+      alert("OPMLエクスポートに失敗しました:\n" + e);
+    }
+  }, [chart, bumpExported]);
+
+  const handleNew = useCallback(async () => {
+    // 未保存データがある場合は先に保存
+    if (isDirty) {
+      if (savePath) {
+        // 既存パスに上書き保存
+        setIsSaving(true);
+        try {
+          await saveChart(chart, savePath);
+          savedChartRef.current = chart;
+          setDirty(false);
+          bumpSaved();
+        } catch (e) {
+          alert("保存に失敗しました:\n" + e);
+          return;
+        } finally {
+          setIsSaving(false);
+        }
+      } else {
+        // 保存先を選択して保存
+        const path = await chooseSavePath(chartDefaultFilename(chart));
+        if (!path) return; // キャンセル → 新規作成を中断
+        setIsSaving(true);
+        try {
+          await saveChart(chart, path);
+          savedChartRef.current = chart;
+          setSavePath(path);
+          await persistSavePath(path);
+          setDirty(false);
+          bumpSaved();
+        } catch (e) {
+          alert("保存に失敗しました:\n" + e);
+          return;
+        } finally {
+          setIsSaving(false);
+        }
+      }
+    }
+
+    // 新しい空チャートを生成してストアに反映
+    const newChart = createChart();
+    initFromFile(newChart);
+    useMandalaStore.temporal.getState().clear();
+    savedChartRef.current = newChart;
+    setSavePath(null);
+    await persistSavePath(null);
+    setDirty(false);
+
+    // 新ファイルの保存先を選択
+    const newPath = await chooseSavePath(chartDefaultFilename(newChart));
+    if (newPath) {
+      try {
+        await saveChart(newChart, newPath);
+        savedChartRef.current = newChart;
+        setSavePath(newPath);
+        await persistSavePath(newPath);
+        setDirty(false);
+        bumpSaved();
+      } catch (e) {
+        alert("保存に失敗しました:\n" + e);
+      }
+    }
+  }, [isDirty, savePath, chart, initFromFile, setSavePath, setDirty, setIsSaving, bumpSaved]);
+
+  // Image action handler
+  const handleImageAction = useCallback(
+    async (cell: MandalaCell) => {
+      if (cell.image) {
+        setCellImage(cell.id, null);
+      } else {
+        if (!savePath) {
+          alert("画像を追加する前にファイルを保存してください。");
+          return;
+        }
+        try {
+          const filename = await addImageToCell(savePath);
+          if (filename) setCellImage(cell.id, filename);
+        } catch (e) {
+          console.error("画像の追加に失敗しました:", e);
+          alert("画像の追加に失敗しました:\n" + e);
+        }
+      }
+    },
+    [savePath, setCellImage],
+  );
+
+  // Overview grid click handler
+  const handleOverviewGridClick = useCallback(
+    (pos: number) => {
+      if (!currentUnit) return;
+      if (pos === CENTER) {
+        setView("unit");
+        return;
+      }
+      const cell = currentUnit.cells[pos];
+      if (cell.text.trim() || cell.image) drillDown(cell);
+    },
+    [currentUnit, drillDown, setView],
+  );
+
+  // ── Global key handlers ──
+
+  // Alt+V, Ctrl+Z/Shift+Z
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const isTextArea = document.activeElement?.tagName === "TEXTAREA";
@@ -85,6 +361,31 @@ export default function App() {
     return () => window.removeEventListener("keydown", handler);
   }, [toggleView]);
 
+  // Ctrl+Shift+S (保存) / Ctrl+E (エクスポート) / Ctrl+N (新規作成)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === "KeyS") {
+        e.preventDefault();
+        handleSaveAs();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.code === "KeyE") {
+        const isTextArea = document.activeElement?.tagName === "TEXTAREA";
+        if (isTextArea) return;
+        e.preventDefault();
+        handleExport();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.code === "KeyN") {
+        e.preventDefault();
+        handleNew();
+        return;
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleSaveAs, handleExport, handleNew]);
+
   // 俯瞰ビュー: Alt+数字 → 該当ユニットへ移動
   useEffect(() => {
     if (view !== "overview") return;
@@ -98,7 +399,7 @@ export default function App() {
         return;
       }
       const cell = currentUnit?.cells.find((c) => c.position === pos);
-      if (cell?.text.trim()) {
+      if (cell?.text.trim() || cell?.image) {
         drillDown(cell);
       } else {
         setView("unit");
@@ -107,32 +408,6 @@ export default function App() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [view, currentUnit, drillDown, setView]);
-
-  // Image action handler (Phase 3: Tauri file dialog)
-  const handleImageAction = useCallback(
-    (cell: MandalaCell) => {
-      if (cell.image) {
-        setCellImage(cell.id, null);
-      } else {
-        console.log("TODO: open Tauri file dialog for cell", cell.id);
-      }
-    },
-    [setCellImage],
-  );
-
-  // Overview grid click handler
-  const handleOverviewGridClick = useCallback(
-    (pos: number) => {
-      if (!currentUnit) return;
-      if (pos === CENTER) {
-        setView("unit");
-        return;
-      }
-      const cell = currentUnit.cells[pos];
-      if (cell.text.trim()) drillDown(cell);
-    },
-    [currentUnit, drillDown, setView],
-  );
 
   const rootTheme = chart.rootUnit.cells[CENTER].text;
   const palette = PALETTES[currentDepth % PALETTES.length];
@@ -157,17 +432,15 @@ export default function App() {
         currentDepth={currentDepth}
         view={view}
         onSetView={setView}
-        onSave={() => alert("保存機能は Phase 3 で実装予定です")}
-        onExport={() => {
-          const data = JSON.stringify(chart, null, 2);
-          const blob = new Blob([data], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `mandala-${Date.now()}.json`;
-          a.click();
-          URL.revokeObjectURL(url);
-        }}
+        isDirty={isDirty}
+        isSaving={isSaving}
+        savePath={savePath}
+        onSave={handleSave}
+        onNew={handleNew}
+        onOpen={handleOpen}
+        onExport={handleExport}
+        onExportMarkdown={handleExportMarkdown}
+        onExportOpml={handleExportOpml}
       />
 
       <Breadcrumbs path={breadcrumbs} onNavigate={navigateBreadcrumb} />

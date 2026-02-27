@@ -5,6 +5,22 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "opener:default"
+    "opener:default",
+    "fs:default",
+    { "identifier": "fs:allow-read-text-file", "allow": [{ "path": "**" }] },
+    { "identifier": "fs:allow-write-text-file", "allow": [{ "path": "**" }] },
+    { "identifier": "fs:allow-mkdir", "allow": [{ "path": "**" }] },
+    { "identifier": "fs:allow-copy-file", "allow": [{ "path": "**" }] },
+    { "identifier": "fs:allow-remove", "allow": [{ "path": "**" }] },
+    { "identifier": "fs:allow-read-dir", "allow": [{ "path": "**" }] },
+    { "identifier": "fs:allow-exists", "allow": [{ "path": "**" }] },
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "store:default",
+    "store:allow-get",
+    "store:allow-set",
+    "store:allow-save",
+    "store:allow-load"
   ]
 }

@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import type { ViewMode } from "../store/useMandalaStore";
 
 interface HeaderProps {
@@ -5,8 +6,15 @@ interface HeaderProps {
   currentDepth: number;
   view: ViewMode;
   onSetView: (v: ViewMode) => void;
+  isDirty: boolean;
+  isSaving: boolean;
+  savePath: string | null;
   onSave: () => void;
+  onNew: () => void;
+  onOpen: () => void;
   onExport: () => void;
+  onExportMarkdown: () => void;
+  onExportOpml: () => void;
 }
 
 export default function Header({
@@ -14,9 +22,43 @@ export default function Header({
   currentDepth,
   view,
   onSetView,
+  isDirty,
+  isSaving,
+  savePath,
   onSave,
+  onNew,
+  onOpen,
   onExport,
+  onExportMarkdown,
+  onExportOpml,
 }: HeaderProps) {
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        exportMenuRef.current &&
+        !exportMenuRef.current.contains(e.target as Node)
+      ) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showExportMenu]);
+
+  const fileName = savePath
+    ? savePath.replace(/\\/g, "/").split("/").pop()
+    : null;
+
+  const exportItems = [
+    { label: "JSON (.json)", action: onExport },
+    { label: "Markdown (.md)", action: onExportMarkdown },
+    { label: "OPML (.opml)", action: onExportOpml },
+  ];
+
   return (
     <header
       style={{
@@ -73,6 +115,20 @@ export default function Header({
               </span>
             </>
           )}
+          {/* 未保存マーカー */}
+          {isDirty && !isSaving && (
+            <span
+              title="未保存の変更があります"
+              style={{ color: "#e67e22", fontSize: "14px", lineHeight: "1" }}
+            >
+              ●
+            </span>
+          )}
+          {isSaving && (
+            <span style={{ fontSize: "11px", color: "#aaa" }}>
+              保存中…
+            </span>
+          )}
         </div>
         <span
           style={{
@@ -86,6 +142,22 @@ export default function Header({
         >
           階層 {currentDepth + 1}
         </span>
+        {/* ファイル名表示 */}
+        {fileName && (
+          <span
+            title={savePath ?? ""}
+            style={{
+              fontSize: "10px",
+              color: "#bbb",
+              maxWidth: "160px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {fileName}
+          </span>
+        )}
       </div>
 
       {/* Right: controls */}
@@ -123,10 +195,10 @@ export default function Header({
           ))}
         </div>
 
-        {/* Save */}
+        {/* New */}
         <button
-          onClick={onSave}
-          title="保存 (Ctrl+Shift+S)"
+          onClick={onNew}
+          title="新規作成 (Ctrl+N)"
           style={{
             padding: "5px 10px",
             borderRadius: "6px",
@@ -139,29 +211,124 @@ export default function Header({
           }}
           onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#999")}
           onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#ddd")}
+        >
+          🆕 新規作成
+        </button>
+
+        {/* Open */}
+        <button
+          onClick={onOpen}
+          title="開く"
+          style={{
+            padding: "5px 10px",
+            borderRadius: "6px",
+            border: "1px solid #ddd",
+            backgroundColor: "#fff",
+            fontSize: "12px",
+            color: "#555",
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#999")}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#ddd")}
+        >
+          📂 開く
+        </button>
+
+        {/* Save */}
+        <button
+          onClick={onSave}
+          title="上書き保存 / 初回保存ダイアログ"
+          style={{
+            padding: "5px 10px",
+            borderRadius: "6px",
+            border: isDirty ? "1px solid #e67e22" : "1px solid #ddd",
+            backgroundColor: isDirty ? "#fff8f4" : "#fff",
+            fontSize: "12px",
+            color: isDirty ? "#e67e22" : "#555",
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontWeight: isDirty ? "600" : "400",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = isDirty ? "#c0392b" : "#999")}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = isDirty ? "#e67e22" : "#ddd")}
         >
           💾 保存
         </button>
 
-        {/* Export */}
-        <button
-          onClick={onExport}
-          title="エクスポート (Ctrl+E)"
-          style={{
-            padding: "5px 10px",
-            borderRadius: "6px",
-            border: "1px solid #ddd",
-            backgroundColor: "#fff",
-            fontSize: "12px",
-            color: "#555",
-            cursor: "pointer",
-            fontFamily: "inherit",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#999")}
-          onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#ddd")}
-        >
-          📤 エクスポート
-        </button>
+        {/* Export dropdown */}
+        <div ref={exportMenuRef} style={{ position: "relative" }}>
+          <button
+            onClick={() => setShowExportMenu((v) => !v)}
+            title="エクスポート (Ctrl+E = JSON)"
+            style={{
+              padding: "5px 10px",
+              borderRadius: "6px",
+              border: "1px solid #ddd",
+              backgroundColor: showExportMenu ? "#f5f5f5" : "#fff",
+              fontSize: "12px",
+              color: "#555",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#999")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = showExportMenu ? "#999" : "#ddd")}
+          >
+            📤 エクスポート
+            <span style={{ fontSize: "9px", color: "#888", lineHeight: "1" }}>▾</span>
+          </button>
+
+          {showExportMenu && (
+            <div
+              style={{
+                position: "absolute",
+                top: "calc(100% + 4px)",
+                right: 0,
+                backgroundColor: "#fff",
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                minWidth: "160px",
+                zIndex: 100,
+                overflow: "hidden",
+              }}
+            >
+              {exportItems.map(({ label, action }) => (
+                <button
+                  key={label}
+                  onClick={() => {
+                    setShowExportMenu(false);
+                    action();
+                  }}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    padding: "8px 14px",
+                    textAlign: "left",
+                    border: "none",
+                    backgroundColor: "transparent",
+                    fontSize: "12px",
+                    color: "#333",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#f5f5f5")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "transparent")
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

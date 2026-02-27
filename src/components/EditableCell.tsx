@@ -8,6 +8,8 @@ import {
 } from "react";
 import type { MandalaCell } from "../types/mandala";
 import type { Palette } from "../constants/palettes";
+import { useSaveStore } from "../store/useSaveStore";
+import { resolveImageUrl } from "../utils/fileOperations";
 
 export interface EditableCellHandle {
   startEditing: () => void;
@@ -54,6 +56,10 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
 
     const s = fontScale;
 
+    // 画像URL解決
+    const savePath = useSaveStore((state) => state.savePath);
+    const imageUrl = resolveImageUrl(cell.image, savePath);
+
     useEffect(() => {
       setDraft(cell.text);
     }, [cell.text]);
@@ -82,7 +88,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
 
     const isCenterReadOnly = isCenter && !isTopLevel && isFocusView;
     const hasChildren = !!cell.children;
-    const canDrillDown = !isCenter && isFocusView && cell.text.trim() !== "";
+    const canDrillDown = !isCenter && isFocusView && (cell.text.trim() !== "" || !!cell.image);
     const canDrillUp = isCenter && isFocusView && !isTopLevel;
     const showModalBtn = isFocusView && cell.text.trim() !== "";
     const showImageBtn = !isCenter && isFocusView;
@@ -102,7 +108,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      aspectRatio: "1",
+      aspectRatio: "16/9",
       borderRadius: radius,
       padding: pad,
       cursor: isCenterReadOnly ? "default" : "text",
@@ -166,9 +172,9 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
       return (
         <div style={cellStyle}>
           {/* Background image layer */}
-          {cell.image && (
+          {imageUrl && (
             <img
-              src={cell.image}
+              src={imageUrl}
               alt=""
               style={{
                 position: "absolute",
@@ -232,9 +238,9 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
         onDrop={handleDrop}
       >
         {/* Background image layer */}
-        {cell.image && (
+        {imageUrl && (
           <img
-            src={cell.image}
+            src={imageUrl}
             alt=""
             style={{
               position: "absolute",

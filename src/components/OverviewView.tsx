@@ -66,7 +66,7 @@ export default function OverviewView({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              aspectRatio: "1",
+              aspectRatio: "16/9",
               overflow: "hidden",
               opacity: isEmpty ? 0.4 : 1,
             }}
@@ -89,7 +89,7 @@ export default function OverviewView({
                         ...childUnit,
                         cells: childUnit.cells.map((c, i) =>
                           i === CENTER
-                            ? { ...c, text: cellRef?.text ?? c.text }
+                            ? { ...c, text: cellRef?.text ?? c.text, image: cellRef?.image ?? c.image }
                             : c,
                         ),
                       }

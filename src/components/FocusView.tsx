@@ -34,7 +34,9 @@ export default function FocusView({
   focusedPosition,
   onSetFocusedPosition,
 }: FocusViewProps) {
-  const [unitSize, setUnitSize] = useState(400);
+  // 16:9 グリッドサイズ（幅・高さを独立管理）
+  const [gridWidth, setGridWidth] = useState(498);
+  const [gridHeight, setGridHeight] = useState(280);
   const cellHandles = useRef<Record<number, EditableCellHandle | null>>({});
 
   const registerHandle = useCallback(
@@ -44,26 +46,29 @@ export default function FocusView({
     [],
   );
 
-  // Responsive size calculation
+  // Responsive size calculation (16:9)
   useEffect(() => {
     const calcSize = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const headerHeight = 52;
       const breadcrumbHeight = 36;
-      const footerHeight = 48; // 2行固定フッター: padding(10) + row1(14) + gap(3) + row2(14) ≈ 41px + 余裕
+      const footerHeight = 48;
       const padding = 16;
       const availableW = vw - 40;
       const availableH = vh - headerHeight - breadcrumbHeight - footerHeight - padding;
-      const size = Math.min(availableW, availableH);
-      setUnitSize(Math.max(280, size));
+      // 幅は availableW と availableH*(16/9) の小さい方
+      const w = Math.max(498, Math.min(availableW, availableH * 16 / 9));
+      setGridWidth(Math.round(w));
+      setGridHeight(Math.round(w * 9 / 16));
     };
     calcSize();
     window.addEventListener("resize", calcSize);
     return () => window.removeEventListener("resize", calcSize);
   }, []);
 
-  const scale = unitSize / 400;
+  // scale はグリッド高さ基準（セル縦サイズが基準）
+  const scale = gridHeight / 400;
 
   // Keyboard shortcut handler
   useEffect(() => {
@@ -101,12 +106,22 @@ export default function FocusView({
         return;
       }
 
-      // Alt+I → image action for focused cell
+      // Alt+I → image action for focused cell (add/remove)
       if (e.code === "KeyI" && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
         e.preventDefault();
         if (focusedPosition !== null && focusedPosition !== CENTER) {
           const cell = unit.cells.find((c) => c.position === focusedPosition);
           if (cell) onImageAction(cell);
+        }
+        return;
+      }
+
+      // Alt+Shift+I → 画像削除（画像がある場合のみ）
+      if (e.code === "KeyI" && !e.ctrlKey && !e.metaKey && e.shiftKey) {
+        e.preventDefault();
+        if (focusedPosition !== null && focusedPosition !== CENTER) {
+          const cell = unit.cells.find((c) => c.position === focusedPosition);
+          if (cell?.image) onImageAction(cell);
         }
         return;
       }
@@ -120,7 +135,7 @@ export default function FocusView({
         // Alt+Ctrl+数字 → drill down
         if (pos === CENTER) return;
         const cell = unit.cells.find((c) => c.position === pos);
-        if (cell && cell.text.trim()) {
+        if (cell && (cell.text.trim() || cell.image)) {
           onDrillDown(cell);
         }
       } else if (e.shiftKey) {
@@ -162,7 +177,7 @@ export default function FocusView({
         height: "100%",
       }}
     >
-      <div style={{ width: `${unitSize}px`, height: `${unitSize}px` }}>
+      <div style={{ width: `${gridWidth}px`, height: `${gridHeight}px` }}>
         <UnitGrid
           unit={unit}
           palette={palette}

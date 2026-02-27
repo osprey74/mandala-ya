@@ -53,7 +53,7 @@ export default function UnitGrid({
         gridTemplateColumns: "repeat(3, 1fr)",
         gridTemplateRows: "repeat(3, 1fr)",
         gap,
-        aspectRatio: "1",
+        aspectRatio: "16/9",
         width: "100%",
         height: "100%",
       }}

@@ -34,6 +34,8 @@ export interface MandalaState {
   setFocusedPosition: (pos: number | null) => void;
   swapCells: (unitId: string, posA: number, posB: number) => void;
   resetNavIfNeeded: () => void;
+  /** ファイル読み込み時にチャートをセットし、ナビゲーション状態をリセットする */
+  initFromFile: (chart: MandalaChart) => void;
 }
 
 const initialChart = createChart();
@@ -150,6 +152,16 @@ export const useMandalaStore = create<MandalaState>()(
         if (!findUnitById(state.chart.rootUnit, currentId)) {
           set({ navStack: [state.chart.rootUnit.id], forwardStack: [] });
         }
+      },
+
+      initFromFile: (chart: MandalaChart) => {
+        set({
+          chart,
+          navStack: [chart.rootUnit.id],
+          forwardStack: [],
+          view: "unit" as ViewMode,
+          focusedPosition: null,
+        });
       },
     }),
     {
