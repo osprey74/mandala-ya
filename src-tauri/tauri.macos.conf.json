@@ -1,0 +1,13 @@
+{
+  "bundle": {
+    "fileAssociations": [
+      {
+        "ext": ["mandala"],
+        "name": "Mandala-ya.Chart",
+        "description": "Mandala-ya Chart File",
+        "mimeType": "application/x-mandala",
+        "role": "Editor"
+      }
+    ]
+  }
+}
