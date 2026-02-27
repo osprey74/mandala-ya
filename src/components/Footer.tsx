@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, memo } from "react";
+import { useEffect, useState, useRef, memo } from "react";
 import { useSaveStore } from "../store/useSaveStore";
 
 const row1 = [
