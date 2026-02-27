@@ -1,6 +1,6 @@
 # Maṇḍalāya — タスク管理表
 
-> 最終更新: 2026-02-27（Phase 7 完了）
+> 最終更新: 2026-02-27（v1.0.1 リリース・CI/CD 完了）
 > 凡例: ✅ 完了 / ⚠️ 部分実装 / ⬜ 未着手
 
 ---
@@ -110,7 +110,8 @@
 | 7-4 | エラーハンドリング（`ErrorBoundary`） | ✅ | `main.tsx` で `<ErrorBoundary>` がアプリ全体を包む |
 | 7-5 | パフォーマンス最適化（`React.memo` 等） | ✅ | `EditableCell`/`UnitGrid`/`OverviewView`/`Header`/`Breadcrumbs`/`Footer` を `memo` 化。`handleSwap`/`noop` を安定参照化。`updateCellInUnit` に同一テキスト時の参照保持最適化を追加 |
 | 7-6 | テスト | ✅ | Vitest 導入。`mandalaHelpers.ts` の 22 テスト（`npm test`） |
-| 7-7 | クロスプラットフォームビルド（macOS / Windows / Linux） | ⬜ | `npm run tauri build` — 各 OS 環境で実行。GitHub Actions 等の CI で対応可 |
+| 7-7 | クロスプラットフォームビルド（macOS / Windows） | ✅ | GitHub Actions CI/CD で自動ビルド（Windows x86_64 + macOS universal） |
+| 7-8 | CI/CD 設定（GitHub Actions） | ✅ | `ci.yml`（テスト自動実行）+ `release.yml`（タグプッシュで自動ビルド＆ Release ドラフト作成） |
 
 ---
 
@@ -124,5 +125,5 @@
 | Phase 4 | 17 | 0 | 0 | 17 |
 | Phase 5 | 4 | 0 | 0 | 4 |
 | Phase 6 | 4 | 0 | 0 | 4 |
-| Phase 7 | 6 | 0 | 1 | 7 |
-| **合計** | **59** | **0** | **1** | **60** |
+| Phase 7 | 8 | 0 | 0 | 8 |
+| **合計** | **61** | **0** | **0** | **61** |
