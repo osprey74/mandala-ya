@@ -1,4 +1,4 @@
-# Maṇḍalāya — 曼荼羅盤
+# Maṇḍalāya — Mandala Board
 
 A desktop app for creating and managing **Mandala charts** — a 9×9 goal-breakdown tool popularized by baseball player Shohei Ohtani.
 
@@ -26,12 +26,12 @@ Built with **Tauri v2 + React + TypeScript + Vite**.
 
 | Shortcut | Action |
 | --- | --- |
-| `Alt + 数字 / テンキー` | Move focus to cell |
+| `Alt + 0–9 / Numpad` | Move focus to cell |
 | `Tab` / `Shift+Tab` | Next / previous cell (skips center) |
-| `Alt + Ctrl + 数字` | Drill down into cell |
+| `Alt + Ctrl + 0–9` | Drill down into cell |
 | `Alt + U` / `Alt + ←` | Drill up |
 | `Alt + →` | Go forward (drill history) |
-| `Alt + Shift + 数字` | Swap cells |
+| `Alt + Shift + 0–9` | Swap cells |
 | `Alt + V` | Toggle Focus / Overview |
 | `Alt + E` | Open modal editor |
 | `Alt + I` | Add image to focused cell |
