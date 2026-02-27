@@ -43,7 +43,7 @@ function chartDefaultFilename(chart: MandalaChart): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
-  return `mandala-ya_${y}${m}${d}.mandala`;
+  return `mandala-ya_${y}${m}${d}.mandalaya`;
 }
 
 export default function App() {

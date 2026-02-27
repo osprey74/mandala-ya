@@ -1,4 +1,4 @@
-/// ダブルクリック起動時に OS から渡された .mandala ファイルパスを返す。
+/// ダブルクリック起動時に OS から渡された .mandalaya ファイルパスを返す。
 /// exists() チェックは行わない（フロントエンド側でエラーハンドリングする）。
 #[tauri::command]
 fn get_startup_file() -> Option<String> {
@@ -6,12 +6,12 @@ fn get_startup_file() -> Option<String> {
         .skip(1)
         .find_map(|arg| {
             let lower = arg.to_lowercase();
-            // 通常のファイルパス: C:\path\to\file.mandala
-            if lower.ends_with(".mandala") {
+            // 通常のファイルパス: C:\path\to\file.mandalaya
+            if lower.ends_with(".mandalaya") {
                 return Some(arg);
             }
-            // file:// URL: file:///C:/path/to/file.mandala
-            if lower.starts_with("file://") && lower.ends_with(".mandala") {
+            // file:// URL: file:///C:/path/to/file.mandalaya
+            if lower.starts_with("file://") && lower.ends_with(".mandalaya") {
                 let path = arg
                     .trim_start_matches("file:///")
                     .trim_start_matches("file://")

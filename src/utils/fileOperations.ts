@@ -18,7 +18,7 @@ import { chartToMarkdown, chartToOpml } from "./mandalaHelpers";
 // ----------------------------------------------------------------
 
 /**
- * ダブルクリック起動時に OS から渡された .mandala ファイルパスを返す。
+ * ダブルクリック起動時に OS から渡された .mandalaya ファイルパスを返す。
  * 通常起動（ファイル指定なし）の場合は null を返す。
  */
 export async function getStartupFile(): Promise<string | null> {
@@ -90,7 +90,7 @@ function joinPath(dir: string, ...parts: string[]): string {
 /**
  * 画像ディレクトリの絶対パスを返す。
  * 仕様: {保存先ディレクトリ}/{JSONファイル名（拡張子除く）}_images
- * 例: /path/to/目標設定2026.mandala → /path/to/目標設定2026_images
+ * 例: /path/to/目標設定2026.mandalaya → /path/to/目標設定2026_images
  */
 export function imagesDir(savePath: string): string {
   const sep = savePath.includes("\\") ? "\\" : "/";
@@ -180,7 +180,7 @@ export async function loadChart(filePath: string): Promise<MandalaChart> {
 // ----------------------------------------------------------------
 
 const MANDALA_FILTER = [
-  { name: "Maṇḍalāya ファイル", extensions: ["mandala"] },
+  { name: "Maṇḍalāya ファイル", extensions: ["mandalaya"] },
   { name: "JSON", extensions: ["json"] },
 ];
 
@@ -192,7 +192,7 @@ export async function chooseSavePath(
   defaultPath?: string
 ): Promise<string | null> {
   const result = await save({
-    defaultPath: defaultPath ?? "マンダラチャート.mandala",
+    defaultPath: defaultPath ?? "マンダラチャート.mandalaya",
     filters: MANDALA_FILTER,
   });
   return result ?? null;

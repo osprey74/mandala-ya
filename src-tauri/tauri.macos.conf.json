@@ -2,10 +2,10 @@
   "bundle": {
     "fileAssociations": [
       {
-        "ext": ["mandala"],
+        "ext": ["mandalaya"],
         "name": "Mandala-ya.Chart",
         "description": "Mandala-ya Chart File",
-        "mimeType": "application/x-mandala",
+        "mimeType": "application/x-mandalaya",
         "role": "Editor"
       }
     ]
