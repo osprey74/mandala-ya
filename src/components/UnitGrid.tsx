@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, memo } from "react";
 import type { MandalaCell, MandalaUnit } from "../types/mandala";
 import type { Palette } from "../constants/palettes";
 import { CENTER } from "../constants/palettes";
@@ -20,7 +20,7 @@ interface UnitGridProps {
   registerHandle?: (pos: number, handle: EditableCellHandle | null) => void;
 }
 
-export default function UnitGrid({
+function UnitGrid({
   unit,
   palette,
   isFocusView,
@@ -53,7 +53,7 @@ export default function UnitGrid({
         gridTemplateColumns: "repeat(3, 1fr)",
         gridTemplateRows: "repeat(3, 1fr)",
         gap,
-        aspectRatio: "16/9",
+        aspectRatio: "6/4",
         width: "100%",
         height: "100%",
       }}
@@ -79,3 +79,5 @@ export default function UnitGrid({
     </div>
   );
 }
+
+export default memo(UnitGrid);

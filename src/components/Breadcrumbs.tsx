@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { BreadcrumbItem } from "../utils/mandalaHelpers";
 
 interface BreadcrumbsProps {
@@ -5,7 +6,7 @@ interface BreadcrumbsProps {
   onNavigate: (index: number) => void;
 }
 
-export default function Breadcrumbs({ path, onNavigate }: BreadcrumbsProps) {
+function Breadcrumbs({ path, onNavigate }: BreadcrumbsProps) {
   return (
     <nav
       style={{
@@ -52,3 +53,5 @@ export default function Breadcrumbs({ path, onNavigate }: BreadcrumbsProps) {
     </nav>
   );
 }
+
+export default memo(Breadcrumbs);

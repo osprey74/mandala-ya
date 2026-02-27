@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { MandalaCell, MandalaUnit } from "../types/mandala";
 import type { Palette } from "../constants/palettes";
 import { KEY_TO_POSITION, CENTER } from "../constants/palettes";
+
+const TAB_ORDER = [0, 1, 2, 3, 5, 6, 7, 8];
 import UnitGrid from "./UnitGrid";
 import type { EditableCellHandle } from "./EditableCell";
 
@@ -18,6 +20,8 @@ interface FocusViewProps {
   onImageAction: (cell: MandalaCell) => void;
   focusedPosition: number | null;
   onSetFocusedPosition: (pos: number | null) => void;
+  onAiAssist: () => void;
+  isAiLoading: boolean;
 }
 
 export default function FocusView({
@@ -33,10 +37,12 @@ export default function FocusView({
   onImageAction,
   focusedPosition,
   onSetFocusedPosition,
+  onAiAssist,
+  isAiLoading,
 }: FocusViewProps) {
-  // 16:9 グリッドサイズ（幅・高さを独立管理）
+  // 6:4 グリッドサイズ（幅・高さを独立管理）
   const [gridWidth, setGridWidth] = useState(498);
-  const [gridHeight, setGridHeight] = useState(280);
+  const [gridHeight, setGridHeight] = useState(332);
   const cellHandles = useRef<Record<number, EditableCellHandle | null>>({});
 
   const registerHandle = useCallback(
@@ -46,7 +52,7 @@ export default function FocusView({
     [],
   );
 
-  // Responsive size calculation (16:9)
+  // Responsive size calculation (6:4)
   useEffect(() => {
     const calcSize = () => {
       const vw = window.innerWidth;
@@ -57,10 +63,10 @@ export default function FocusView({
       const padding = 16;
       const availableW = vw - 40;
       const availableH = vh - headerHeight - breadcrumbHeight - footerHeight - padding;
-      // 幅は availableW と availableH*(16/9) の小さい方
-      const w = Math.max(498, Math.min(availableW, availableH * 16 / 9));
+      // 幅は availableW と availableH*(6/4) の小さい方
+      const w = Math.max(498, Math.min(availableW, availableH * 6 / 4));
       setGridWidth(Math.round(w));
-      setGridHeight(Math.round(w * 9 / 16));
+      setGridHeight(Math.round(w * 4 / 6));
     };
     calcSize();
     window.addEventListener("resize", calcSize);
@@ -73,6 +79,25 @@ export default function FocusView({
   // Keyboard shortcut handler
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Tab / Shift+Tab → セル順移動（中心セルをスキップ）
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const currentIndex =
+          focusedPosition !== null && focusedPosition !== CENTER
+            ? TAB_ORDER.indexOf(focusedPosition)
+            : -1;
+        let nextIndex: number;
+        if (e.shiftKey) {
+          nextIndex = currentIndex <= 0 ? TAB_ORDER.length - 1 : currentIndex - 1;
+        } else {
+          nextIndex = currentIndex >= TAB_ORDER.length - 1 ? 0 : currentIndex + 1;
+        }
+        const nextPos = TAB_ORDER[nextIndex];
+        onSetFocusedPosition(nextPos);
+        cellHandles.current[nextPos]?.startEditing();
+        return;
+      }
+
       if (!e.altKey) return;
 
       // Alt+U or Alt+ArrowLeft → drill up
@@ -95,6 +120,13 @@ export default function FocusView({
       }
 
       // Alt+V は App.tsx のグローバルハンドラーで処理
+
+      // Alt+G → AI アシスト
+      if (e.code === "KeyG" && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        e.preventDefault();
+        onAiAssist();
+        return;
+      }
 
       // Alt+E → open modal for focused cell
       if (e.code === "KeyE" && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
@@ -165,6 +197,7 @@ export default function FocusView({
     onSwap,
     onImageAction,
     onSetFocusedPosition,
+    onAiAssist,
   ]);
 
   return (
@@ -177,7 +210,36 @@ export default function FocusView({
         height: "100%",
       }}
     >
-      <div style={{ width: `${gridWidth}px`, height: `${gridHeight}px` }}>
+      <div style={{ position: "relative", width: `${gridWidth}px`, height: `${gridHeight}px` }}>
+        {isAiLoading && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundColor: "rgba(255,255,255,0.85)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 50,
+              borderRadius: "8px",
+              gap: "10px",
+            }}
+          >
+            <div
+              style={{
+                width: "28px",
+                height: "28px",
+                border: "3px solid #e0e0e0",
+                borderTopColor: "#512DA8",
+                borderRadius: "50%",
+                animation: "spin 0.8s linear infinite",
+              }}
+            />
+            <span style={{ fontSize: "13px", color: "#555" }}>AI 生成中…</span>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
         <UnitGrid
           unit={unit}
           palette={palette}

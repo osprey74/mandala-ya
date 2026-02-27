@@ -1,14 +1,14 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, memo } from "react";
 import { useSaveStore } from "../store/useSaveStore";
 
 const row1 = [
   "Alt+数字→セル移動",
+  "Tab/Shift+Tab→次/前セル",
   "Enter→確定",
   "Esc→取消",
   "Alt+Shift+数字→入替",
   "Alt+E→エディタ",
 ];
-
 const row2 = [
   "Alt+Ctrl+数字→下階層",
   "Alt+U→上階層",
@@ -17,16 +17,7 @@ const row2 = [
   "Ctrl+Z/Shift+Z→戻す/やり直す",
 ];
 
-const rowStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "center",
-  gap: "16px",
-  flexWrap: "nowrap",
-  overflow: "hidden",
-  whiteSpace: "nowrap",
-};
-
-export default function Footer() {
+function Footer() {
   const lastSavedAt = useSaveStore((s) => s.lastSavedAt);
   const lastExportedAt = useSaveStore((s) => s.lastExportedAt);
 
@@ -69,53 +60,52 @@ export default function Footer() {
         padding: "5px 20px",
         backgroundColor: "#fff",
         borderTop: "1px solid #eee",
-        fontSize: "10px",
-        color: "#aaa",
+        fontSize: "11px",
+        color: "#777",
         display: "flex",
-        flexDirection: "column",
-        gap: "3px",
+        alignItems: "center",
+        justifyContent: "center",
         zIndex: 100,
       }}
     >
-      <div style={rowStyle}>
-        {row1.map((s) => (
-          <span key={s}>{s}</span>
-        ))}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "2px",
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ display: "flex", gap: "16px", whiteSpace: "nowrap" }}>
+          {row1.map((s) => <span key={s}>{s}</span>)}
+        </div>
+        <div style={{ display: "flex", gap: "16px", whiteSpace: "nowrap" }}>
+          {row2.map((s) => <span key={s}>{s}</span>)}
+        </div>
       </div>
-      <div style={{ position: "relative" }}>
-        <div style={rowStyle}>
-          {row2.map((s) => (
-            <span key={s}>{s}</span>
-          ))}
-        </div>
-        {/* 保存 / エクスポート完了通知 */}
-        <div
-          style={{
-            position: "absolute",
-            right: 0,
-            top: "50%",
-            transform: "translateY(-50%)",
-            display: "flex",
-            alignItems: "center",
-            gap: "3px",
-            color: "#4caf50",
-            fontSize: "11px",
-            fontWeight: "500",
-            opacity: visible ? 1 : 0,
-            transition: "opacity 0.5s ease",
-            pointerEvents: "none",
-            whiteSpace: "nowrap",
-          }}
-        >
-          <span
-            className="material-symbols-rounded"
-            style={{ fontSize: "14px", lineHeight: 1 }}
-          >
-            check_circle
-          </span>
-          {notifMsg}
-        </div>
+
+      {/* 保存 / エクスポート完了通知 */}
+      <div
+        style={{
+          position: "absolute",
+          right: "20px",
+          display: "flex",
+          alignItems: "center",
+          gap: "3px",
+          color: "#4caf50",
+          fontSize: "11px",
+          fontWeight: "500",
+          opacity: visible ? 1 : 0,
+          transition: "opacity 0.5s ease",
+          pointerEvents: "none",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <span className="material-symbols-rounded">check_circle</span>
+        {notifMsg}
       </div>
     </footer>
   );
 }
+
+export default memo(Footer);

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo } from "react";
 import type { ViewMode } from "../store/useMandalaStore";
 
 interface HeaderProps {
@@ -15,9 +15,10 @@ interface HeaderProps {
   onExport: () => void;
   onExportMarkdown: () => void;
   onExportOpml: () => void;
+  onOpenSettings: () => void;
 }
 
-export default function Header({
+function Header({
   rootTheme,
   currentDepth,
   view,
@@ -31,6 +32,7 @@ export default function Header({
   onExport,
   onExportMarkdown,
   onExportOpml,
+  onOpenSettings,
 }: HeaderProps) {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -329,7 +331,29 @@ export default function Header({
             </div>
           )}
         </div>
+
+        {/* Settings */}
+        <button
+          onClick={onOpenSettings}
+          title="AI アシスト設定"
+          style={{
+            padding: "5px 10px",
+            borderRadius: "6px",
+            border: "1px solid #ddd",
+            backgroundColor: "#fff",
+            fontSize: "12px",
+            color: "#555",
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#999")}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#ddd")}
+        >
+          ⚙️ AI設定
+        </button>
       </div>
     </header>
   );
 }
+
+export default memo(Header);

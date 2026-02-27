@@ -30,6 +30,11 @@ import Breadcrumbs from "./components/Breadcrumbs";
 import FocusView from "./components/FocusView";
 import OverviewView from "./components/OverviewView";
 import ModalEditor from "./components/ModalEditor";
+import SettingsModal from "./components/SettingsModal";
+import Toast from "./components/Toast";
+import type { ToastType } from "./components/Toast";
+import { useSettingsStore } from "./store/useSettingsStore";
+import { generateKeywords } from "./utils/claudeApi";
 
 /** チャートの作成日から保存ダイアログのデフォルトファイル名を生成する */
 function chartDefaultFilename(chart: MandalaChart): string {
@@ -79,6 +84,14 @@ export default function App() {
   // ── Modal editor state ──
   const [modalCell, setModalCell] = useState<MandalaCell | null>(null);
 
+  // ── AI assist state ──
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  // ── Settings store ──
+  const { apiKey, model, load: loadSettings } = useSettingsStore();
+
   // ── Dirty tracking: last-saved chart ref ──
   const savedChartRef = useRef(chart);
 
@@ -100,6 +113,12 @@ export default function App() {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Startup: load AI settings ──
+  useEffect(() => {
+    loadSettings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Reset nav if current unit was removed by undo
@@ -317,6 +336,44 @@ export default function App() {
     [savePath, setCellImage],
   );
 
+  // Swap handler (stable reference for FocusView memo)
+  const handleSwap = useCallback(
+    (fromPos: number, toPos: number) => swapCells(currentUnitId, fromPos, toPos),
+    [swapCells, currentUnitId],
+  );
+
+  // AI assist handler
+  const handleAiAssist = useCallback(async () => {
+    if (!currentUnit) return;
+
+    const centerCell = currentUnit.cells.find((c) => c.position === CENTER);
+    if (!centerCell?.text.trim()) {
+      setToast({ message: "主題セルにテキストを入力してください", type: "error" });
+      return;
+    }
+    if (!apiKey) {
+      setShowSettings(true);
+      return;
+    }
+
+    setIsAiLoading(true);
+    try {
+      const keywords = await generateKeywords(centerCell.text.trim(), apiKey, model);
+      const relatedCells = currentUnit.cells.filter((c) => c.position !== CENTER);
+      relatedCells.forEach((cell, i) => {
+        if (keywords[i] !== undefined) {
+          updateCell(cell.id, keywords[i]);
+        }
+      });
+      setToast({ message: "キーワードを生成しました", type: "success" });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setToast({ message: `生成に失敗しました:\n${msg}`, type: "error" });
+    } finally {
+      setIsAiLoading(false);
+    }
+  }, [currentUnit, apiKey, model, updateCell]);
+
   // Overview grid click handler
   const handleOverviewGridClick = useCallback(
     (pos: number) => {
@@ -441,6 +498,7 @@ export default function App() {
         onExport={handleExport}
         onExportMarkdown={handleExportMarkdown}
         onExportOpml={handleExportOpml}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       <Breadcrumbs path={breadcrumbs} onNavigate={navigateBreadcrumb} />
@@ -456,10 +514,12 @@ export default function App() {
             onDrillUp={drillUp}
             onDrillForward={drillForward}
             onOpenModal={setModalCell}
-            onSwap={(fromPos, toPos) => swapCells(currentUnitId, fromPos, toPos)}
+            onSwap={handleSwap}
             onImageAction={handleImageAction}
             focusedPosition={focusedPosition}
             onSetFocusedPosition={setFocusedPosition}
+            onAiAssist={handleAiAssist}
+            isAiLoading={isAiLoading}
           />
         )}
         {view === "overview" && (
@@ -481,6 +541,16 @@ export default function App() {
           initialText={modalCell.text}
           onSave={(text) => updateCell(modalCell.id, text)}
           onClose={() => setModalCell(null)}
+        />
+      )}
+
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

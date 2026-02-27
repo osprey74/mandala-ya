@@ -5,6 +5,7 @@ import {
   useImperativeHandle,
   forwardRef,
   useCallback,
+  memo,
 } from "react";
 import type { MandalaCell } from "../types/mandala";
 import type { Palette } from "../constants/palettes";
@@ -52,6 +53,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(cell.text);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [isDarkImage, setIsDarkImage] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const s = fontScale;
@@ -59,6 +61,40 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
     // 画像URL解決
     const savePath = useSaveStore((state) => state.savePath);
     const imageUrl = resolveImageUrl(cell.image, savePath);
+
+    // 画像輝度分析: 暗い画像なら isDarkImage=true → 白文字
+    useEffect(() => {
+      if (!imageUrl) {
+        setIsDarkImage(false);
+        return;
+      }
+      let cancelled = false;
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        if (cancelled) return;
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = 20;
+          canvas.height = 20;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+          ctx.drawImage(img, 0, 0, 20, 20);
+          const { data } = ctx.getImageData(0, 0, 20, 20);
+          let total = 0;
+          const count = data.length / 4;
+          for (let i = 0; i < data.length; i += 4) {
+            total += (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255;
+          }
+          if (!cancelled) setIsDarkImage(total / count < 0.5);
+        } catch {
+          if (!cancelled) setIsDarkImage(false);
+        }
+      };
+      img.onerror = () => { if (!cancelled) setIsDarkImage(false); };
+      img.src = imageUrl;
+      return () => { cancelled = true; };
+    }, [imageUrl]);
 
     useEffect(() => {
       setDraft(cell.text);
@@ -98,17 +134,18 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
     const btnSize = Math.round(22 * s);
     const btnFont = isFocusView ? `${Math.round(12 * s)}px` : "10px";
     const pad = isFocusView ? `${Math.round(6 * s)}px` : "3px";
-    const radius = isFocusView ? `${Math.round(8 * s)}px` : "4px";
+    const radius = isFocusView ? `${Math.round(4 * s)}px` : "2px";
 
     const cellBg = isCenter ? palette.center : palette.bg;
     const cellColor = isCenter ? "#fff" : "#1a1a1a";
+    const effectiveTextColor = imageUrl ? (isDarkImage ? "#fff" : "#1a1a1a") : cellColor;
 
     const cellStyle: React.CSSProperties = {
       position: "relative",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      aspectRatio: "16/9",
+      aspectRatio: "6/4",
       borderRadius: radius,
       padding: pad,
       cursor: isCenterReadOnly ? "default" : "text",
@@ -118,7 +155,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
         ? `2px solid ${palette.center}`
         : `1px solid ${palette.border}55`,
       backgroundColor: isDragOver ? palette.border + "33" : cellBg,
-      color: cellColor,
+      color: effectiveTextColor,
       fontWeight: isCenter ? "700" : "400",
       fontSize,
       lineHeight: "1.3",
@@ -267,7 +304,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
               left: "3px",
               width: `${btnSize}px`,
               height: `${btnSize}px`,
-              borderRadius: "12px",
+              borderRadius: "50%",
               border: "1px solid rgba(255,255,255,0.5)",
               backgroundColor: "rgba(255,255,255,0.25)",
               color: "#fff",
@@ -288,7 +325,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
               (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.25)")
             }
           >
-            ↑
+            <span className="material-symbols-rounded">arrow_upward</span>
           </button>
         )}
 
@@ -306,7 +343,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
               right: "3px",
               width: `${btnSize}px`,
               height: `${btnSize}px`,
-              borderRadius: "12px",
+              borderRadius: "50%",
               border: isCenter
                 ? "1px solid rgba(255,255,255,0.5)"
                 : `1px solid ${palette.border}66`,
@@ -335,7 +372,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
                 : "rgba(0,0,0,0.06)";
             }}
           >
-            ↗
+            <span className="material-symbols-rounded">open_in_new</span>
           </button>
         )}
 
@@ -371,7 +408,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
               right: "3px",
               width: `${btnSize}px`,
               height: `${btnSize}px`,
-              borderRadius: "12px",
+              borderRadius: "50%",
               border: `1px solid ${palette.border}66`,
               backgroundColor: hasChildren ? palette.border : "rgba(0,0,0,0.06)",
               color: hasChildren ? "#fff" : palette.border,
@@ -396,7 +433,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
               e.currentTarget.style.color = hasChildren ? "#fff" : palette.border;
             }}
           >
-            ↓
+            <span className="material-symbols-rounded">arrow_downward</span>
           </button>
         )}
 
@@ -414,7 +451,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
               left: "3px",
               width: `${btnSize}px`,
               height: `${btnSize}px`,
-              borderRadius: "12px",
+              borderRadius: "50%",
               border: `1px solid ${palette.border}66`,
               backgroundColor: "rgba(0,0,0,0.06)",
               color: palette.border,
@@ -435,7 +472,7 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
               (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.06)")
             }
           >
-            {cell.image ? "✕" : "🖼"}
+            <span className="material-symbols-rounded">{cell.image ? "hide_image" : "add_photo_alternate"}</span>
           </button>
         )}
 
@@ -462,4 +499,4 @@ const EditableCell = forwardRef<EditableCellHandle, EditableCellProps>(
 
 EditableCell.displayName = "EditableCell";
 
-export default EditableCell;
+export default memo(EditableCell);

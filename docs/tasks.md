@@ -1,6 +1,6 @@
 # Maṇḍalāya — タスク管理表
 
-> 最終更新: 2026-02-27（Phase 5 Markdown / OPML エクスポート実装完了）
+> 最終更新: 2026-02-27（Phase 7 完了）
 > 凡例: ✅ 完了 / ⚠️ 部分実装 / ⬜ 未着手
 
 ---
@@ -74,6 +74,7 @@
 | 4-14 | `Enter` → 編集確定 / `Esc` → キャンセル | ✅ | `EditableCell` キーハンドラ |
 | 4-15 | `Ctrl + Enter` → モーダル保存 / `Esc` → モーダルキャンセル | ✅ | `ModalEditor` キーハンドラ |
 | 4-16 | 編集中ショートカット伝播処理（commit → 次セル編集） | ✅ | `EditableCell` → blur → commit |
+| 4-17 | `Tab` / `Shift+Tab` → セル順移動（0→1→2→3→5→6→7→8→0…、逆順） | ✅ | 中心セル(4)をスキップ |
 
 ---
 
@@ -92,10 +93,10 @@
 
 | # | タスク | 状態 | 備考 |
 |---|--------|------|------|
-| 6-1 | 設定画面（プロバイダー選択・APIキー入力・モデル選択） | ⬜ | |
-| 6-2 | `Alt + G` → キーワード生成（条件チェック→API→セル配置） | ⬜ | |
-| 6-3 | ローディング UI（オーバーレイ＋スピナー） | ⬜ | |
-| 6-4 | エラーハンドリング（トースト通知） | ⬜ | |
+| 6-1 | 設定画面（プロバイダー選択・APIキー入力・モデル選択） | ✅ | `SettingsModal.tsx` + `useSettingsStore.ts` |
+| 6-2 | `Alt + G` → キーワード生成（条件チェック→API→セル配置） | ✅ | `claudeApi.ts` + `FocusView` キーハンドラ |
+| 6-3 | ローディング UI（オーバーレイ＋スピナー） | ✅ | `FocusView` 内オーバーレイ |
+| 6-4 | エラーハンドリング（トースト通知） | ✅ | `Toast.tsx` |
 
 ---
 
@@ -105,11 +106,11 @@
 |---|--------|------|------|
 | 7-1 | アプリアイコン設定 | ✅ | `npm run tauri icon` で生成済み |
 | 7-2 | ウィンドウタイトル設定（`Maṇḍalāya — 曼荼羅盤`） | ✅ | `tauri.conf.json` + `index.html` 更新済み |
-| 7-3 | ウィンドウの最小サイズ設定 | ⬜ | `tauri.conf.json` に `minWidth`/`minHeight` 追加予定 |
-| 7-4 | エラーハンドリング（`ErrorBoundary`） | ⚠️ | `ErrorBoundary` コンポーネント実装済み。Tauri エラー処理は未実装 |
-| 7-5 | パフォーマンス最適化（`React.memo` 等） | ⬜ | |
-| 7-6 | テスト | ⬜ | |
-| 7-7 | クロスプラットフォームビルド（macOS / Windows / Linux） | ⬜ | |
+| 7-3 | ウィンドウの最小サイズ設定 | ✅ | `minWidth: 640`, `minHeight: 500` |
+| 7-4 | エラーハンドリング（`ErrorBoundary`） | ✅ | `main.tsx` で `<ErrorBoundary>` がアプリ全体を包む |
+| 7-5 | パフォーマンス最適化（`React.memo` 等） | ✅ | `EditableCell`/`UnitGrid`/`OverviewView`/`Header`/`Breadcrumbs`/`Footer` を `memo` 化。`handleSwap`/`noop` を安定参照化。`updateCellInUnit` に同一テキスト時の参照保持最適化を追加 |
+| 7-6 | テスト | ✅ | Vitest 導入。`mandalaHelpers.ts` の 22 テスト（`npm test`） |
+| 7-7 | クロスプラットフォームビルド（macOS / Windows / Linux） | ⬜ | `npm run tauri build` — 各 OS 環境で実行。GitHub Actions 等の CI で対応可 |
 
 ---
 
@@ -120,8 +121,8 @@
 | Phase 1 | 5 | 0 | 0 | 5 |
 | Phase 2 | 13 | 0 | 0 | 13 |
 | Phase 3 | 10 | 0 | 0 | 10 |
-| Phase 4 | 16 | 0 | 0 | 16 |
+| Phase 4 | 17 | 0 | 0 | 17 |
 | Phase 5 | 4 | 0 | 0 | 4 |
-| Phase 6 | 0 | 0 | 4 | 4 |
-| Phase 7 | 2 | 1 | 4 | 7 |
-| **合計** | **50** | **1** | **8** | **59** |
+| Phase 6 | 4 | 0 | 0 | 4 |
+| Phase 7 | 6 | 0 | 1 | 7 |
+| **合計** | **59** | **0** | **1** | **60** |

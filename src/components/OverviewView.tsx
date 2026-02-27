@@ -1,7 +1,13 @@
-import type { MandalaUnit } from "../types/mandala";
+import { memo } from "react";
+import type { MandalaCell, MandalaUnit } from "../types/mandala";
 import type { Palette } from "../constants/palettes";
 import { CENTER, PALETTES } from "../constants/palettes";
 import UnitGrid from "./UnitGrid";
+
+// 俯瞰ビューの UnitGrid に渡すダミーコールバック（安定した参照）
+const noop = () => {};
+const noopCell = (_cell: MandalaCell) => {};
+const noopSwap = (_from: number, _to: number) => {};
 
 interface OverviewViewProps {
   unit: MandalaUnit;
@@ -12,7 +18,7 @@ interface OverviewViewProps {
   onGridClick: (pos: number) => void;
 }
 
-export default function OverviewView({
+function OverviewView({
   unit,
   isTopLevel,
   currentDepth,
@@ -66,7 +72,7 @@ export default function OverviewView({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              aspectRatio: "16/9",
+              aspectRatio: "6/4",
               overflow: "hidden",
               opacity: isEmpty ? 0.4 : 1,
             }}
@@ -98,11 +104,11 @@ export default function OverviewView({
                 isFocusView={false}
                 isTopLevel={isCurrentCenter && isTopLevel}
                 onUpdate={onUpdate}
-                onDrillDown={() => {}}
-                onDrillUp={() => {}}
-                onOpenModal={() => {}}
-                onSwap={() => {}}
-                onImageAction={() => {}}
+                onDrillDown={noop}
+                onDrillUp={noop}
+                onOpenModal={noopCell}
+                onSwap={noopSwap}
+                onImageAction={noopCell}
                 fontScale={1}
               />
             ) : (
@@ -133,3 +139,5 @@ export default function OverviewView({
     </div>
   );
 }
+
+export default memo(OverviewView);

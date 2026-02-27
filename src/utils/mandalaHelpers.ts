@@ -35,6 +35,7 @@ export function updateCellInUnit(
   let changed = false;
   const newCells = unit.cells.map((cell) => {
     if (cell.id === cellId) {
+      if (cell.text === newText) return cell;
       changed = true;
       return { ...cell, text: newText };
     }
