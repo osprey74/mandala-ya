@@ -27,6 +27,30 @@ export function createChart(): MandalaChart {
   };
 }
 
+function extractIdNum(id: string): number {
+  const match = id.match(/\d+$/);
+  return match ? parseInt(match[0], 10) : 0;
+}
+
+function findMaxId(unit: MandalaUnit): number {
+  let max = extractIdNum(unit.id);
+  for (const cell of unit.cells) {
+    max = Math.max(max, extractIdNum(cell.id));
+    if (cell.children) {
+      max = Math.max(max, findMaxId(cell.children));
+    }
+  }
+  return max;
+}
+
+/** ファイル読み込み後に _idCounter をチャート内の最大 ID に同期し、衝突を防ぐ */
+export function syncIdCounter(chart: MandalaChart): void {
+  const maxId = findMaxId(chart.rootUnit);
+  if (maxId > _idCounter) {
+    _idCounter = maxId;
+  }
+}
+
 export function updateCellInUnit(
   unit: MandalaUnit,
   cellId: string,

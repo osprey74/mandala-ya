@@ -9,9 +9,25 @@ import {
 } from "@tauri-apps/plugin-fs";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { Store } from "@tauri-apps/plugin-store";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import type { MandalaChart } from "../types/mandala";
 import { chartToMarkdown, chartToOpml } from "./mandalaHelpers";
+
+// ----------------------------------------------------------------
+// 起動時ファイル取得
+// ----------------------------------------------------------------
+
+/**
+ * ダブルクリック起動時に OS から渡された .mandala ファイルパスを返す。
+ * 通常起動（ファイル指定なし）の場合は null を返す。
+ */
+export async function getStartupFile(): Promise<string | null> {
+  try {
+    return await invoke<string | null>("get_startup_file");
+  } catch {
+    return null;
+  }
+}
 
 // ----------------------------------------------------------------
 // 設定ストア

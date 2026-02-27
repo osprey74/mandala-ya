@@ -21,6 +21,7 @@ import {
   exportChartOpml,
   chooseSavePath,
   addImageToCell,
+  getStartupFile,
 } from "./utils/fileOperations";
 import { PALETTES, CENTER, KEY_TO_POSITION } from "./constants/palettes";
 import { createChart } from "./utils/mandalaHelpers";
@@ -95,9 +96,27 @@ export default function App() {
   // ── Dirty tracking: last-saved chart ref ──
   const savedChartRef = useRef(chart);
 
-  // ── Startup: load from plugin-store ──
+  // ── Startup: load from file association or plugin-store ──
   useEffect(() => {
     (async () => {
+      // ダブルクリック起動: OS から渡されたファイルを最優先で開く
+      const startupFile = await getStartupFile();
+      if (startupFile) {
+        try {
+          const loaded = await loadChart(startupFile);
+          initFromFile(loaded);
+          useMandalaStore.temporal.getState().clear();
+          savedChartRef.current = loaded;
+          setSavePath(startupFile);
+          await persistSavePath(startupFile);
+          setDirty(false);
+        } catch (e) {
+          console.warn("起動時ファイルの読み込みに失敗しました:", e);
+        }
+        return;
+      }
+
+      // 通常起動: 前回の保存先からロード
       const storedPath = await loadSavedPath();
       if (!storedPath) return;
       try {

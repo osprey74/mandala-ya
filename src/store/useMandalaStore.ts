@@ -11,6 +11,7 @@ import {
   buildBreadcrumbs,
   swapCellsInUnit,
   findChildUnitId,
+  syncIdCounter,
 } from "../utils/mandalaHelpers";
 export type { BreadcrumbItem } from "../utils/mandalaHelpers";
 
@@ -155,6 +156,7 @@ export const useMandalaStore = create<MandalaState>()(
       },
 
       initFromFile: (chart: MandalaChart) => {
+        syncIdCounter(chart);
         set({
           chart,
           navStack: [chart.rootUnit.id],
