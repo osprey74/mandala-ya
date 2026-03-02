@@ -42,7 +42,8 @@ function OverviewView({
         gap: "8px",
         // 横幅と縦の利用可能領域のどちらか小さい方に合わせる（スクロール防止）
         // header(52) + breadcrumb(36) + footer(48) + grid padding(32) = 168px
-        width: "min(calc(100vw - 40px), calc(100vh - 168px), 700px)",
+        // ユニット表示と同じ比率: availableH × 6/4 = availableH × 1.5
+        width: "min(calc(100vw - 40px), calc((100vh - 168px) * 1.5))",
         padding: "16px",
       }}
     >
