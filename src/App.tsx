@@ -409,6 +409,29 @@ export default function App() {
 
   // ── Global key handlers ──
 
+  // ブラウザ / WebView デフォルトのズーム操作を抑止（Ctrl++/-/0/wheel）
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (
+        e.code === "Equal" || e.code === "NumpadAdd" ||
+        e.code === "Minus" || e.code === "NumpadSubtract" ||
+        e.code === "Digit0" || e.code === "Numpad0"
+      ) {
+        e.preventDefault();
+      }
+    };
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) e.preventDefault();
+    };
+    window.addEventListener("keydown", handleKey);
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
+
   // Alt+V, Ctrl+Z/Shift+Z
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -553,7 +576,7 @@ export default function App() {
         )}
       </main>
 
-      <Footer />
+      <Footer view={view} />
 
       {modalCell && (
         <ModalEditor

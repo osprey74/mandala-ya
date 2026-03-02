@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, memo } from "react";
 import { useSaveStore } from "../store/useSaveStore";
 
-const row1 = [
+const unitRow1 = [
   "Alt+数字→セル移動",
   "Tab/Shift+Tab→次/前セル",
   "Enter→確定",
@@ -9,15 +9,30 @@ const row1 = [
   "Alt+Shift+数字→入替",
   "Alt+E→エディタ",
 ];
-const row2 = [
+const unitRow2 = [
   "Alt+Ctrl+数字→下階層",
   "Alt+U→上階層",
   "Alt+V→ビュー切替",
   "Alt+G→AI",
   "Ctrl+Z/Shift+Z→戻す/やり直す",
 ];
+const overviewRow1 = [
+  "Alt+数字→ユニット移動",
+  "Alt+V→ビュー切替",
+  "Ctrl+Z/Shift+Z→戻す/やり直す",
+];
+const overviewRow2 = [
+  "Ctrl+=/ホイール↑→拡大",
+  "Ctrl+ホイール↓→縮小",
+  "Ctrl+0→標準サイズ",
+  "ドラッグ→スクロール",
+];
 
-function Footer() {
+interface FooterProps {
+  view?: "unit" | "overview";
+}
+
+function Footer({ view = "unit" }: FooterProps) {
   const lastSavedAt = useSaveStore((s) => s.lastSavedAt);
   const lastExportedAt = useSaveStore((s) => s.lastExportedAt);
 
@@ -77,10 +92,10 @@ function Footer() {
         }}
       >
         <div style={{ display: "flex", gap: "16px", whiteSpace: "nowrap" }}>
-          {row1.map((s) => <span key={s}>{s}</span>)}
+          {(view === "overview" ? overviewRow1 : unitRow1).map((s) => <span key={s}>{s}</span>)}
         </div>
         <div style={{ display: "flex", gap: "16px", whiteSpace: "nowrap" }}>
-          {row2.map((s) => <span key={s}>{s}</span>)}
+          {(view === "overview" ? overviewRow2 : unitRow2).map((s) => <span key={s}>{s}</span>)}
         </div>
       </div>
 
