@@ -80,6 +80,11 @@ npm run tauri build
 
 See [docs/tasks.md](docs/tasks.md) for the full task list.
 
+## Documentation
+
+- [System Specification](docs/spec/mandala-ya-system-spec.md) — Architecture, data model, component specs, keyboard shortcuts, and more
+- [Requirements Definition](docs/spec/mandala-ya-spec.md) — Original requirements (pre-implementation)
+
 ---
 
 ## License

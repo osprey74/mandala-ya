@@ -80,6 +80,11 @@ npm run tauri build
 
 タスク一覧は [docs/tasks.md](docs/tasks.md) を参照してください。
 
+## ドキュメント
+
+- [システム仕様書](docs/spec/mandala-ya-system-spec.md) — アーキテクチャ、データモデル、コンポーネント仕様、キーボードショートカット等
+- [要件定義書](docs/spec/mandala-ya-spec.md) — 実装前の要件定義（参考）
+
 ---
 
 ## ライセンス
