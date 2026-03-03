@@ -6,6 +6,35 @@ Built with **Tauri v2 + React + TypeScript + Vite**.
 
 ---
 
+## Installation
+
+Pre-built binaries are available on the [Releases](https://github.com/nicories/mandala-ya/releases) page.
+
+> **Note:** The binaries are **not code-signed**. Your OS will show a security warning on first launch.
+
+### Windows
+
+Windows SmartScreen may block the installer with a **"Windows protected your PC"** dialog.
+
+1. Click **"More info"**
+2. Click **"Run anyway"**
+
+### macOS
+
+Gatekeeper will show **""Maṇḍalāya" can't be opened because Apple cannot check it for malicious software."**
+
+1. Open **System Settings → Privacy & Security**
+2. Scroll down to the Security section — you will see a message about the blocked app
+3. Click **"Open Anyway"**
+
+Alternatively, run the following command before launching the app for the first time:
+
+```bash
+xattr -cr /Applications/Maṇḍalāya.app
+```
+
+---
+
 ## Features
 
 - **Hierarchical mandala chart** — drill down/up through nested 3×3 units
