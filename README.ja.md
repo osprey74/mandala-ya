@@ -116,6 +116,12 @@ npm run tauri build
 
 ---
 
+## サポート
+
+このプロジェクトが役に立ったら、開発を支援していただけると嬉しいです：
+
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-ff5e5b?logo=ko-fi)](https://ko-fi.com/osprey74)
+
 ## ライセンス
 
 MIT

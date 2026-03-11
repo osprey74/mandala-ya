@@ -116,6 +116,12 @@ See [docs/tasks.md](docs/tasks.md) for the full task list.
 
 ---
 
+## Support
+
+If you find this project useful, consider supporting its development:
+
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-ff5e5b?logo=ko-fi)](https://ko-fi.com/osprey74)
+
 ## License
 
 MIT
